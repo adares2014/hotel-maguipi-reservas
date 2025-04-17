@@ -4,14 +4,14 @@ import openai
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+
+# Cargar variable de entorno desde archivo .env
 load_dotenv()
-api_key = st.secrets["OPENAI_API_KEY"]
+api_key = os.getenv("OPENAI_API_KEY")
 
 st.set_page_config(page_title="Asistente de Reservas Magüipi", page_icon="🏖️")
 
 st.title("🏖️ Asistente de Reservas - Hotel Magüipi")
-
-
 
 # --- Cargar Excel ---
 @st.cache_data
@@ -112,7 +112,6 @@ if prompt and api_key:
     )
 
     try:
-        # Capturar cualquier variante de llamada a función con "reserva(" dentro
         if "reserva(" in prompt:
             for palabra in ["calcular_precio(", "calculando_reserva(", "cotizar_reserva("]:
                 prompt = prompt.replace(palabra, "calcular_reserva(")
@@ -134,4 +133,4 @@ if prompt and api_key:
         st.chat_message("assistant").markdown(f"⚠️ Error al conectar con OpenAI: {e}")
 
 elif prompt and not api_key:
-    st.warning("Debes ingresar tu OpenAI API Key en la barra lateral.")
+    st.warning("No se pudo cargar la clave OpenAI desde el archivo .env")
