@@ -2,13 +2,16 @@ import streamlit as st
 import pandas as pd
 import openai
 from datetime import datetime
+from dotenv import load_dotenv
+import os
+load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
 
 st.set_page_config(page_title="Asistente de Reservas Magüipi", page_icon="🏖️")
 
 st.title("🏖️ Asistente de Reservas - Hotel Magüipi")
 
-# --- Ingreso de clave OpenAI ---
-api_key = st.sidebar.text_input("🔑 Ingresa tu OpenAI API Key", type="password")
+
 
 # --- Cargar Excel ---
 @st.cache_data
