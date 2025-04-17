@@ -2,12 +2,10 @@ import streamlit as st
 import pandas as pd
 import openai
 from datetime import datetime
-from dotenv import load_dotenv
 import os
 
-# Cargar variable de entorno desde archivo .env
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
+# Leer clave desde Streamlit Secrets en la nube
+api_key = st.secrets["OPENAI_API_KEY"]
 
 st.set_page_config(page_title="Asistente de Reservas Magüipi", page_icon="🏖️")
 
@@ -133,4 +131,4 @@ if prompt and api_key:
         st.chat_message("assistant").markdown(f"⚠️ Error al conectar con OpenAI: {e}")
 
 elif prompt and not api_key:
-    st.warning("No se pudo cargar la clave OpenAI desde el archivo .env")
+    st.warning("No se pudo cargar la clave OpenAI desde los secretos de Streamlit Cloud.")
