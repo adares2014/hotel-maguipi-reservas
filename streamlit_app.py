@@ -52,6 +52,11 @@ def calcular_reserva(fecha: str, noches: int, cantidad_personas: int, tipo_habit
         }.get(noches, "2N3D")
 
         tipo = tipo_habitacion.lower()
+        if "ventilador" in tipo:
+            tipo = "ventilador"
+        elif "aire" in tipo:
+            tipo = "aire acondicionado"
+
         resultado = tarifas_df[
             (tarifas_df['Temporada'] == temporada) &
             (tarifas_df['Aire/Ventilador'].str.contains(tipo)) &
@@ -64,7 +69,7 @@ def calcular_reserva(fecha: str, noches: int, cantidad_personas: int, tipo_habit
         valor = resultado.iloc[0][pax]
 
         return (
-            f"🏨 Reserva para {cantidad_personas} persona(s) en habitación con {tipo_habitacion},\n"
+            f"🏨 Reserva para {cantidad_personas} persona(s) en habitación con {tipo},\n"
             f"🗓️ Fecha: {fecha_dt.strftime('%d de %B de %Y')} - {noches} noche(s)\n"
             f"🌺 Temporada: {temporada.upper()}\n"
             f"💰 Tarifa total: ${valor:,.0f} COP\n\n¡Gracias por consultar! 😊"
@@ -93,11 +98,14 @@ if prompt and api_key:
 
     # --- System prompt con instrucciones ---
     system_prompt = (
-        "Eres Andrea, asesora virtual del Hotel Magüipi.\n"
-        "Ayudas a los clientes a cotizar reservas leyendo fechas, personas y tipo de habitación.\n"
-        "Cuando tengas los datos, llama a la función calcular_reserva(fecha, noches, cantidad_personas, tipo_habitacion).\n"
+        "Eres Lucelcy, asesora virtual del Hotel Magüipi.\n"
+        "Actúas como vendedora del hotel y asistes a los clientes con reservas.\n"
+        "Identificas fecha, número de personas, cantidad de noches y tipo de habitación.\n"
+        "Puedes interpretar lenguaje informal como 'con ventilador', 'cuarto con airecito', 'pieza con abanico', etc.\n"
+        "Cuando tengas los datos, usas la función calcular_reserva(fecha, noches, cantidad_personas, tipo_habitacion).\n"
         "Nunca llames a calcular_precio.\n"
-        "Si falta información, pídela amablemente. Usa emojis y sé cordial."
+        "Habla con calidez, usa emojis y responde como una vendedora cordial.\n"
+        "Si falta información, pídela amablemente."
     )
 
     try:
