@@ -109,9 +109,11 @@ if prompt and api_key:
     )
 
     try:
-        # Simular invocación local (no function calling oficial)
-        if "calcular_reserva(" in prompt or "calcular_precio(" in prompt:
-            prompt = prompt.replace("calcular_precio(", "calcular_reserva(")
+        # Capturar cualquier variante de llamada a función con "reserva(" dentro
+        if "reserva(" in prompt:
+            for palabra in ["calcular_precio(", "calculando_reserva(", "cotizar_reserva("]:
+                prompt = prompt.replace(palabra, "calcular_reserva(")
+
             args = prompt.replace("calcular_reserva(", "").replace(")", "")
             partes = [x.split("=")[-1].strip().strip('"') for x in args.split(",")]
             respuesta = calcular_reserva(*partes)
