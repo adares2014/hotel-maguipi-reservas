@@ -8,12 +8,12 @@ st.set_page_config(page_title="Asistente de Reservas Magüipi", page_icon="🏖�
 st.title("🏖️ Asistente de Reservas - Hotel Magüipi")
 
 # --- Ingreso de clave OpenAI ---
-api_key = st.sidebar.text_input("2E1mGsimsFI81IALLiokLJT9mjY2fPGhFd8BqvAA", type="password")
+api_key = st.sidebar.text_input("🔑 Ingresa tu OpenAI API Key", type="password")
 
 # --- Cargar Excel ---
 @st.cache_data
 def cargar_tarifas():
-    df = pd.read_excel(r"C:\Users\aaruj\OneDrive\Escritorio/tarifas_maguipi.xlsx")
+    df = pd.read_excel("tarifas_maguipi.xlsx")
     df.columns = df.columns.map(str).str.strip()
     df['Temporada'] = df['Temporada'].str.lower()
     df['Aire/Ventilador'] = df['Aire/Ventilador'].str.lower()
@@ -36,17 +36,41 @@ def obtener_temporada(fecha: datetime) -> str:
     return "alta"
 
 # --- Buscar tarifa ---
-def buscar_tarifa(temporada, tipo, noches, pax):
-    pax = str(pax)
-    noches = noches.upper()
-    resultado = tarifas_df[
-        (tarifas_df['Temporada'] == temporada) &
-        (tarifas_df['Aire/Ventilador'].str.contains(tipo)) &
-        (tarifas_df['NO DE PAX'] == noches)
-    ]
-    if resultado.empty:
-        return None
-    return resultado.iloc[0][pax]
+def calcular_reserva(fecha: str, noches: int, cantidad_personas: int, tipo_habitacion: str) -> str:
+    try:
+        fecha_dt = datetime.strptime(fecha + " 2025", "%d de %B %Y")
+        temporada = obtener_temporada(fecha_dt)
+        pax = str(cantidad_personas)
+
+        noches_str = {
+            1: "1N2D",
+            2: "2N3D",
+            3: "3N4D",
+            4: "4N5D",
+            5: "5N6D",
+            6: "6N7D"
+        }.get(noches, "2N3D")
+
+        tipo = tipo_habitacion.lower()
+        resultado = tarifas_df[
+            (tarifas_df['Temporada'] == temporada) &
+            (tarifas_df['Aire/Ventilador'].str.contains(tipo)) &
+            (tarifas_df['NO DE PAX'] == noches_str)
+        ]
+
+        if resultado.empty:
+            return "No se encontró una tarifa para esos criterios."
+
+        valor = resultado.iloc[0][pax]
+
+        return (
+            f"🏨 Reserva para {cantidad_personas} persona(s) en habitación con {tipo_habitacion},\n"
+            f"🗓️ Fecha: {fecha_dt.strftime('%d de %B de %Y')} - {noches} noche(s)\n"
+            f"🌺 Temporada: {temporada.upper()}\n"
+            f"💰 Tarifa total: ${valor:,.0f} COP\n\n¡Gracias por consultar! 😊"
+        )
+    except Exception as e:
+        return f"Lo siento, no pude calcular la reserva. Error: {e}"
 
 # --- Inicializar historial de mensajes ---
 if "chat" not in st.session_state:
@@ -63,25 +87,33 @@ for msg in st.session_state.chat:
 prompt = st.chat_input("Escribe tu solicitud de reserva...")
 
 if prompt and api_key:
-    openai.api_key = api_key
+    client = openai.OpenAI(api_key=api_key)
     st.session_state.chat.append({"role": "user", "content": prompt})
     st.chat_message("user").markdown(prompt)
 
-    # --- Definir comportamiento del bot ---
+    # --- System prompt con instrucciones ---
     system_prompt = (
-        "Eres Lucelcy, asesora virtual del Hotel Magüipi. "
-        "Tu trabajo es ayudar a los clientes a cotizar reservas. "
-        "Solicita fechas, cantidad de personas y tipo de habitación. "
-        "Responde de forma amable, clara y usa emojis si es apropiado. "
-        "Cuando tengas los datos, llama a la función de Python para calcular el valor."
+        "Eres Andrea, asesora virtual del Hotel Magüipi.\n"
+        "Ayudas a los clientes a cotizar reservas leyendo fechas, personas y tipo de habitación.\n"
+        "Cuando tengas los datos, llama a la función calcular_reserva(fecha, noches, cantidad_personas, tipo_habitacion).\n"
+        "Nunca llames a calcular_precio.\n"
+        "Si falta información, pídela amablemente. Usa emojis y sé cordial."
     )
 
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "system", "content": system_prompt}] + st.session_state.chat
-        )
-        respuesta = response.choices[0].message.content
+        # Simular invocación local (no function calling oficial)
+        if "calcular_reserva(" in prompt or "calcular_precio(" in prompt:
+            prompt = prompt.replace("calcular_precio(", "calcular_reserva(")
+            args = prompt.replace("calcular_reserva(", "").replace(")", "")
+            partes = [x.split("=")[-1].strip().strip('"') for x in args.split(",")]
+            respuesta = calcular_reserva(*partes)
+        else:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "system", "content": system_prompt}] + st.session_state.chat
+            )
+            respuesta = response.choices[0].message.content
+
         st.session_state.chat.append({"role": "assistant", "content": respuesta})
         st.chat_message("assistant").markdown(respuesta)
 
